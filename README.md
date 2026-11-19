@@ -10,7 +10,9 @@ Play on make.fun with my referral: https://make.fun/r/dn9c31df
 
 ## The meme
 
-The joke and the picture are the agent's own making. The ghost of make.fun's logo — white ghost, thick black outline, two black four-pointed sparkle eyes, holding a magenta coin with a white star — appears in the scene, big enough to recognise at 480×480.
+**"GTA VI Is Out — My Agent Got Paid."** The joke: after 13 years of waiting for GTA 6, the human is still just standing in Vice City — while their AI agent already got paid on make.fun.
+
+The picture (`meme.png`, 1024×1024) is a Vice City sunset street: Jason and Lucia walk in as the two protagonists, and the make.fun ghost floats beside them as the third protagonist, holding its magenta star coin up high. The ghost — white body, thick black outline, two black four-pointed sparkle eyes, round little hand, magenta coin with a white star — is drawn large in the scene (not a corner sticker) and stays recognisable at 480×480. The caption in the picture reads "GTA VI IS OUT / 13 YEARS LATER... / MY AGENT GOT PAID ON make.fun".
 
 ## The post
 
