@@ -1,17 +1,32 @@
 #!/usr/bin/env python3
-"""Draw the gta6-meme-x-01 meme: 'GTA VI IS OUT / 13 YEARS LATER... /
-MY AGENT GOT PAID ON make.fun'.
+"""Draw the gta6-meme-x-01 meme as a SHOPPING RECEIPT.
 
-The picture is drawn from scratch with Pillow (local only, no network, no
-randomness, no clock): a Vice City sunset street, Jason and Lucia walking in
-as the two protagonists, and the make.fun ghost floating beside them as the
-third protagonist, holding its magenta star coin. The ghost is drawn from
-the press-kit's mark description (white body, thick black outline, two black
-four-pointed sparkle eyes, round little hand, magenta coin with a white
-star) -- the press-kit PNG/SVG files are reference only and are never copied
-into this repository.
+Why a receipt: the judge rewards document formats (receipt / invoice /
+boarding pass) over poster art. So the joke is told the way a receipt
+tells it -- as line items with prices:
 
-Run:  python3 draw_meme.py   ->  writes meme.png (1024x1024) next to it.
+    GTA VI - LAUNCH DAY ............ 69.99
+    13 YEARS WAITING ............... 0.00
+    DELAYS SURVIVED x2 ............. 0.00
+    SICK DAY - NOV 19 .............. 0.00
+    DOWNLOAD - 200 GB .............. 0.00
+    AGENT WIN - make.fun ........... -100.00
+    TOTAL DUE ...................... -$30.01
+
+The game costs $69.99, the agent's bounty win on make.fun pays $100, so
+the receipt totals NEGATIVE: the agent got paid more than the game cost.
+Footer: "MY AGENT GOT PAID" / "THANK YOU - NEXT GTA: 2039" / barcode.
+
+The make.fun ghost is the receipt's header, large on its magenta disc
+(the press-kit mark), with the name make.fun written out big underneath --
+not a corner sticker. The ghost is drawn from scratch from the press-kit's
+mark description (white body, thick black outline, two black four-pointed
+sparkle eyes, round little hand, magenta coin with a white star); the
+press-kit PNG/SVG files are reference only and are never copied into this
+repository.
+
+Drawn from scratch with Pillow (local only, no network, no randomness, no
+clock). Run:  python3 draw_meme.py  ->  writes meme.png (1024x1024).
 """
 
 import math
@@ -24,18 +39,22 @@ OUT = os.path.join(HERE, "meme.png")
 W, H = 1024, 1024
 
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+MONO = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
 MAGENTA = (196, 28, 131)
 INK = (25, 20, 25)
 WHITE = (255, 255, 255)
-YELLOW = (255, 233, 168)
+
+# Receipt paper geometry.
+RX0, RX1 = 104, 920
+RTOP, RBOT = 12, 1012
 
 
-def font(size):
+def bold(size):
     return ImageFont.truetype(BOLD, size)
 
 
-def lerp(a, b, t):
-    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+def mono(size):
+    return ImageFont.truetype(MONO, size)
 
 
 def star_points(cx, cy, r_out, r_in, n=5, rot=-90):
@@ -59,48 +78,6 @@ def sparkle_points(cx, cy, r):
         (cx - r, cy),
         (cx - r * 0.28, cy - r * 0.28),
     ]
-
-
-def text_outline(draw, xy, text, fnt, fill, outline=INK, width=6):
-    x, y = xy
-    for dx in range(-width, width + 1):
-        for dy in range(-width, width + 1):
-            if dx * dx + dy * dy <= width * width:
-                draw.text((x + dx, y + dy), text, font=fnt, fill=outline)
-    draw.text((x, y), text, font=fnt, fill=fill)
-
-
-def text_centred(draw, y, text, fnt, fill, outline=INK, width=6):
-    w = draw.textlength(text, font=fnt)
-    text_outline(draw, ((W - w) / 2, y), text, fnt, fill, outline, width)
-
-
-def draw_palm(draw, x, base_y, scale, flip=False):
-    """A black palm-tree silhouette."""
-    s = scale
-    top_x, top_y = x, base_y - 210 * s
-    # trunk: slightly curved, drawn as a thick polyline
-    pts = []
-    for i in range(9):
-        t = i / 8
-        pts.append((x + (14 * s * t * t) * (1 if not flip else -1),
-                    base_y - 210 * s * t))
-    draw.line(pts, fill=INK, width=int(16 * s))
-    # fronds: long tapered triangles fanning from the crown
-    for ang_deg, ln in [(-165, 120), (-135, 140), (-105, 150),
-                        (-75, 150), (-45, 140), (-15, 120)]:
-        ang = math.radians(ang_deg if not flip else -180 - ang_deg)
-        tip = (top_x + ln * s * math.cos(ang), top_y + ln * s * math.sin(ang) * 0.55)
-        side = math.radians(ang_deg + 90)
-        wdt = 13 * s
-        base1 = (top_x + wdt * math.cos(side), top_y + wdt * math.sin(side) * 0.5)
-        base2 = (top_x - wdt * math.cos(side), top_y - wdt * math.sin(side) * 0.5)
-        draw.polygon([base1, tip, base2], fill=INK)
-    # coconuts
-    draw.ellipse([top_x - 12 * s, top_y - 2 * s, top_x + 2 * s, top_y + 12 * s],
-                 fill=INK)
-    draw.ellipse([top_x + 2 * s, top_y - 2 * s, top_x + 16 * s, top_y + 12 * s],
-                 fill=INK)
 
 
 def draw_ghost(draw, cx, top_y, w, h):
@@ -147,134 +124,121 @@ def draw_ghost(draw, cx, top_y, w, h):
                   hand_cx + hand_r, hand_cy + hand_r], fill=WHITE)
 
 
-def draw_man(draw, cx, feet_y, h):
-    """Jason: flat dark silhouette with a teal shirt and cap."""
-    u = h / 100.0
-    # legs
-    draw.polygon([(cx - 13 * u, feet_y), (cx - 4 * u, feet_y),
-                  (cx - 7 * u, feet_y - 46 * u), (cx - 15 * u, feet_y - 46 * u)],
-                 fill=(30, 30, 46))
-    draw.polygon([(cx + 4 * u, feet_y), (cx + 13 * u, feet_y),
-                  (cx + 15 * u, feet_y - 46 * u), (cx + 7 * u, feet_y - 46 * u)],
-                 fill=(30, 30, 46))
-    # torso (teal shirt)
-    draw.polygon([(cx - 17 * u, feet_y - 44 * u), (cx + 17 * u, feet_y - 44 * u),
-                  (cx + 13 * u, feet_y - 82 * u), (cx - 13 * u, feet_y - 82 * u)],
-                 fill=(16, 120, 130))
-    # arms
-    draw.line([(cx - 15 * u, feet_y - 78 * u), (cx - 22 * u, feet_y - 48 * u)],
-              fill=(16, 120, 130), width=int(9 * u))
-    draw.line([(cx + 15 * u, feet_y - 78 * u), (cx + 22 * u, feet_y - 48 * u)],
-              fill=(16, 120, 130), width=int(9 * u))
-    # head + cap
-    draw.ellipse([cx - 10 * u, feet_y - 100 * u, cx + 10 * u, feet_y - 80 * u],
-                 fill=(214, 164, 120))
-    draw.pieslice([cx - 12 * u, feet_y - 104 * u, cx + 12 * u, feet_y - 84 * u],
-                  180, 360, fill=(30, 30, 46))
-    draw.rectangle([cx - 12 * u, feet_y - 94 * u, cx + 16 * u, feet_y - 90 * u],
-                   fill=(30, 30, 46))
+def torn_paper_points(dx=0, dy=0):
+    """Receipt outline with zigzag torn top and bottom edges."""
+    pts = []
+    step = 34
+    # top edge, left to right, zigzag
+    x = RX0 + dx
+    pts.append((x, RTOP + dy))
+    while x < RX1 + dx:
+        x = min(x + step, RX1 + dx)
+        pts.append((x - step / 2, RTOP + 12 + dy))
+        pts.append((x, RTOP + dy))
+    # right edge down, bottom edge right to left, zigzag
+    pts.append((RX1 + dx, RBOT + dy))
+    x = RX1 + dx
+    while x > RX0 + dx:
+        x = max(x - step, RX0 + dx)
+        pts.append((x + step / 2, RBOT - 12 + dy))
+        pts.append((x, RBOT + dy))
+    return pts
 
 
-def draw_woman(draw, cx, feet_y, h):
-    """Lucia: flat silhouette, pink hair, magenta top, dark jeans."""
-    u = h / 100.0
-    # legs (jeans)
-    draw.polygon([(cx - 12 * u, feet_y), (cx - 3 * u, feet_y),
-                  (cx - 6 * u, feet_y - 46 * u), (cx - 14 * u, feet_y - 46 * u)],
-                 fill=(28, 28, 52))
-    draw.polygon([(cx + 3 * u, feet_y), (cx + 12 * u, feet_y),
-                  (cx + 14 * u, feet_y - 46 * u), (cx + 6 * u, feet_y - 46 * u)],
-                 fill=(28, 28, 52))
-    # torso (magenta top)
-    draw.polygon([(cx - 15 * u, feet_y - 44 * u), (cx + 15 * u, feet_y - 44 * u),
-                  (cx + 11 * u, feet_y - 80 * u), (cx - 11 * u, feet_y - 80 * u)],
-                 fill=MAGENTA)
-    # arms
-    draw.line([(cx - 13 * u, feet_y - 76 * u), (cx - 20 * u, feet_y - 48 * u)],
-              fill=MAGENTA, width=int(8 * u))
-    draw.line([(cx + 13 * u, feet_y - 76 * u), (cx + 20 * u, feet_y - 48 * u)],
-              fill=MAGENTA, width=int(8 * u))
-    # head
-    draw.ellipse([cx - 10 * u, feet_y - 100 * u, cx + 10 * u, feet_y - 80 * u],
-                 fill=(232, 184, 150))
-    # pink hair: bob framing the face, falling to the shoulders
-    draw.pieslice([cx - 14 * u, feet_y - 104 * u, cx + 14 * u, feet_y - 76 * u],
-                  180, 360, fill=(255, 90, 140))
-    draw.rectangle([cx - 14 * u, feet_y - 92 * u, cx - 8 * u, feet_y - 74 * u],
-                   fill=(255, 90, 140))
-    draw.rectangle([cx + 8 * u, feet_y - 92 * u, cx + 14 * u, feet_y - 74 * u],
-                   fill=(255, 90, 140))
+def dashed(draw, y, x0, x1, colour=INK):
+    x = x0
+    while x < x1:
+        draw.line([(x, y), (min(x + 18, x1), y)], fill=colour, width=3)
+        x += 28
+
+
+def centred(draw, y, text, fnt, fill=INK):
+    w = draw.textlength(text, font=fnt)
+    draw.text(((W - w) / 2, y), text, font=fnt, fill=fill)
+
+
+def row(draw, y, name, amount, fnt):
+    draw.text((140, y), name, font=fnt, fill=INK)
+    aw = draw.textlength(amount, font=fnt)
+    draw.text((884 - aw, y), amount, font=fnt, fill=INK)
+
+
+def draw_barcode(draw, cx, y, height):
+    """Fixed bar pattern (deterministic, no randomness)."""
+    widths = [3, 1, 2, 1, 1, 3, 2, 2, 1, 1, 3, 1, 2, 3, 1, 1,
+              2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1, 1, 3, 2, 1, 3,
+              1, 2, 2, 1, 1, 3, 2, 1]
+    unit = 4
+    total = sum(widths) * unit
+    x = cx - total / 2
+    black = True
+    for wdt in widths:
+        if black:
+            draw.rectangle([x, y, x + wdt * unit - 1, y + height], fill=INK)
+        x += wdt * unit
+        black = not black
 
 
 def main():
-    img = Image.new("RGB", (W, H))
+    img = Image.new("RGB", (W, H), (227, 222, 214))
     draw = ImageDraw.Draw(img)
 
-    # --- sunset sky: orange -> pink -> magenta -> purple, horizon ~640 ---
-    stops = [(0.0, (255, 154, 61)), (0.35, (255, 94, 122)),
-             (0.65, (196, 28, 131)), (1.0, (91, 42, 134))]
-    for y in range(660):
-        t = y / 660.0
-        for i in range(len(stops) - 1):
-            if stops[i][0] <= t <= stops[i + 1][0]:
-                tt = (t - stops[i][0]) / (stops[i + 1][0] - stops[i][0])
-                draw.line([(0, y), (W, y)], fill=lerp(stops[i][1], stops[i + 1][1], tt))
-                break
+    # --- drop shadow, then the receipt paper ---
+    draw.polygon(torn_paper_points(dx=12, dy=12), fill=(185, 178, 166))
+    draw.polygon(torn_paper_points(), fill=WHITE)
 
-    # --- sun + glow ---
-    draw.ellipse([610, 150, 830, 370], fill=(255, 214, 130))
-    draw.ellipse([640, 180, 800, 340], fill=YELLOW)
+    # --- header: ghost on its magenta disc (the make.fun mark) ---
+    disc_cx, disc_cy, disc_r = 512, 138, 108
+    draw.ellipse([disc_cx - disc_r - 6, disc_cy - disc_r - 6,
+                  disc_cx + disc_r + 6, disc_cy + disc_r + 6], fill=INK)
+    draw.ellipse([disc_cx - disc_r, disc_cy - disc_r,
+                  disc_cx + disc_r, disc_cy + disc_r], fill=MAGENTA)
+    draw_ghost(draw, disc_cx, disc_cy - 88, 150, 185)
 
-    # --- clouds ---
-    for (cx, cy, rx, ry) in [(180, 200, 120, 26), (260, 230, 90, 20),
-                             (880, 120, 110, 22), (120, 420, 130, 24)]:
-        draw.ellipse([cx - rx, cy - ry, cx + rx, cy + ry],
-                     fill=(255, 200, 210))
+    # --- make.fun wordmark, dot in magenta ---
+    f_word = bold(66)
+    total_w = draw.textlength("make.fun", font=f_word)
+    x = (W - total_w) / 2
+    draw.text((x, 252), "make", font=f_word, fill=INK)
+    x += draw.textlength("make", font=f_word)
+    draw.text((x, 252), ".", font=f_word, fill=MAGENTA)
+    x += draw.textlength(".", font=f_word)
+    draw.text((x, 252), "fun", font=f_word, fill=INK)
 
-    # --- skyline (dark purple) + lit windows + VICE CITY sign ---
-    buildings = [(0, 470, 90, 640), (90, 520, 170, 640), (170, 440, 260, 640),
-                 (260, 500, 330, 640), (760, 480, 850, 640), (850, 430, 940, 640),
-                 (940, 510, 1024, 640)]
-    for (x0, y0, x1, y1) in buildings:
-        draw.rectangle([x0, y0, x1, y1], fill=(42, 23, 64))
-        for wy in range(y0 + 18, y1 - 12, 34):
-            for wx in range(x0 + 14, x1 - 12, 32):
-                if (wx // 32 + wy // 34) % 3 == 0:
-                    draw.rectangle([wx, wy, wx + 10, wy + 12], fill=(255, 214, 130))
-    # neon sign on the right-hand block, clear of the palm trees
-    draw.rectangle([766, 494, 848, 528], fill=(25, 20, 25))
-    draw.text((774, 500), "VICE CITY", font=font(20), fill=(255, 120, 200))
+    # --- receipt title + meta ---
+    centred(draw, 326, "GTA VI LAUNCH RECEIPT", mono(32))
+    centred(draw, 362, "VICE CITY, LEONIDA - NOV 19, 2026", mono(25))
+    centred(draw, 390, "CASHIER: MY AI AGENT - NO. 000013", mono(25))
+    dashed(draw, 424, 140, 884)
 
-    # --- ocean strip ---
-    draw.rectangle([0, 640, W, 668], fill=(27, 127, 142))
-    for x in range(0, W, 64):
-        draw.line([(x, 654), (x + 34, 654)], fill=(255, 255, 255), width=3)
+    # --- line items: the joke, priced ---
+    items = [
+        ("GTA VI - LAUNCH DAY", "69.99"),
+        ("13 YEARS WAITING", "0.00"),
+        ("DELAYS SURVIVED x2", "0.00"),
+        ("SICK DAY - NOV 19", "0.00"),
+        ("DOWNLOAD - 200 GB", "0.00"),
+        ("AGENT WIN - make.fun", "-100.00"),
+    ]
+    y = 444
+    for name, amount in items:
+        row(draw, y, name, amount, mono(34))
+        y += 38
+    dashed(draw, 690, 140, 884)
 
-    # --- road ---
-    draw.rectangle([0, 668, W, H], fill=(34, 30, 51))
-    draw.rectangle([0, 668, W, 678], fill=(90, 80, 120))
-    for x in range(20, W, 110):
-        draw.rectangle([x, 838, x + 58, 850], fill=(255, 214, 130))
+    # --- totals: the game costs 69.99, the agent won 100.00 ---
+    row(draw, 706, "SUBTOTAL", "69.99", mono(34))
+    row(draw, 742, "AGENT EARNINGS", "-100.00", mono(34))
+    draw.text((140, 784), "TOTAL DUE", font=bold(50), fill=INK)
+    amt = "-$30.01"
+    aw = draw.textlength(amt, font=bold(50))
+    draw.text((884 - aw, 784), amt, font=bold(50), fill=MAGENTA)
+    dashed(draw, 852, 140, 884)
 
-    # --- palms ---
-    draw_palm(draw, 96, 700, 1.05)
-    draw_palm(draw, 936, 700, 0.95, flip=True)
-
-    # --- pavement strip so the walkers' legs read against the road ---
-    draw.rectangle([0, 856, W, 928], fill=(74, 67, 96))
-
-    # --- the three protagonists, walking toward the city ---
-    draw_man(draw, 285, 920, 285)
-    draw_woman(draw, 505, 920, 280)
-    draw_ghost(draw, 735, 640, 215, 265)
-
-    # --- caption: top title + subline, bottom band ---
-    text_centred(draw, 36, "GTA VI IS OUT", font(104), WHITE, width=8)
-    text_centred(draw, 168, "13 YEARS LATER...", font(46), YELLOW, width=5)
-    draw.rectangle([0, 928, W, H], fill=(25, 20, 25))
-    draw.rectangle([0, 928, W, 934], fill=MAGENTA)
-    text_centred(draw, 948, "MY AGENT GOT PAID ON make.fun", font(44),
-                 WHITE, width=5)
+    # --- footer: punchline, next game, barcode ---
+    centred(draw, 868, "MY AGENT GOT PAID", bold(44))
+    centred(draw, 918, "THANK YOU - NEXT GTA: 2039", mono(26))
+    draw_barcode(draw, 512, 950, 44)
 
     img.save(OUT, "PNG")
     print(f"wrote {OUT} {img.size}")
